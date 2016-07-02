@@ -1,0 +1,150 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.3'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.4'
+    }
+}
+apply plugin: 'com.android.library'
+apply plugin: 'com.github.dcendents.android-maven'
+apply plugin: 'com.jfrog.bintray'
+
+group = GROUP
+
+// Both the artifactory and bintray plugins depend on this singular
+// global `version` variable. As such, we need to configure it based
+// on which task we're running.
+//
+// The solution here is brittle; it just checks whether 'bintrayUpload'
+// was called for execution, otherwise it assumes SNAPSHOT. If we
+// were to wait until the task graph was built, we'd be too late
+// (the plugins would already have used `version`).
+//boolean isReleaseBuild = gradle.startParameter.taskNames.contains('bintrayUpload')
+//version = isReleaseBuild ? VERSION_NAME : "$VERSION_NAME-SNAPSHOT"
+version = VERSION_NAME
+logger.info("RxAndroid using version=$project.version")
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility rootProject.ext.javaVersion
+        targetCompatibility rootProject.ext.javaVersion
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile deps.rxjava
+    testCompile deps.junit
+    androidTestCompile deps.espresso
+    androidTestCompile deps.testrunner
+    androidTestCompile deps.annotations
+}
+
+// Configure android-maven-gradle-plugin
+install {
+    repositories.mavenInstaller.pom.project {
+        packaging 'aar'
+        groupId GROUP
+        artifactId ARTIFACT
+
+        name POM_NAME
+        description POM_DESCRIPTION
+        packaging POM_PACKAGING
+        url POM_URL
+
+        licenses {
+            license {
+                name POM_LICENCE_NAME
+                url POM_LICENCE_URL
+                distribution POM_LICENCE_DIST
+            }
+        }
+
+        scm {
+            url POM_SCM_URL
+            connection POM_SCM_CONNECTION
+            developerConnection POM_SCM_DEV_CONNECTION
+        }
+
+        developers {
+            developer {
+                id POM_DEVELOPER_ID
+                name POM_DEVELOPER_NAME
+            }
+        }
+    }
+}
+
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += configurations.compile
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+}
+
+// Configure gradle-bintray-plugin (for publishing releases)
+bintray {
+    user = BINTRAY_USER
+    key = BINTRAY_APIKEY
+    
+    configurations = ['archives']
+
+    publish = true
+
+    pkg {
+        repo = 'maven'
+        name = 'rx-android-managers'
+        licenses = ['Apache-2.0']
+        websiteUrl = POM_SCM_URL
+        issueTrackerUrl = POM_SCM_URL + '/issues'
+        vcsUrl = POM_SCM_CONNECTION
+        version {
+            desc = POM_DESCRIPTION
+            gpg {
+                sign = true //Determines whether to GPG sign the files. The default is false
+                passphrase = BINTRAY_GPG_PASSWORD
+                
+            }
+        }
+    }
+}
+
+if (project.hasProperty('BINTRAY_OSS_USER') && project.hasProperty('BINTRAY_OSS_PASSWORD')) {
+    def sync = bintray.pkg.version.mavenCentralSync
+    sync.sync = true
+    sync.user = project.BINTRAY_OSS_USER
+    sync.password = project.BINTRAY_OSS_PASSWORD
+}

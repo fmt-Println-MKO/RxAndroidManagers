@@ -1,0 +1,3 @@
+rootProject.name='rxandroidmanagers-root'
+
+include ':sample-app', ':rx-android-managers'
