@@ -33,4 +33,7 @@ dependencies {
     androidTestCompile deps.espresso
     androidTestCompile deps.testrunner
     androidTestCompile deps.annotations
+    
+    compile deps.design
+    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha3'
 }
