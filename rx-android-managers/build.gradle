@@ -5,11 +5,13 @@ buildscript {
     dependencies {
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4'
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7'
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:3.1.1"
     }
 }
 apply plugin: 'com.android.library'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.jfrog.artifactory-upload'
 
 group = GROUP
 
@@ -21,9 +23,9 @@ group = GROUP
 // was called for execution, otherwise it assumes SNAPSHOT. If we
 // were to wait until the task graph was built, we'd be too late
 // (the plugins would already have used `version`).
-//boolean isReleaseBuild = gradle.startParameter.taskNames.contains('bintrayUpload')
-//version = isReleaseBuild ? VERSION_NAME : "$VERSION_NAME-SNAPSHOT"
-version = VERSION_NAME
+boolean isReleaseBuild = gradle.startParameter.taskNames.contains('bintrayUpload')
+version = isReleaseBuild ? VERSION_NAME : "$VERSION_NAME-SNAPSHOT"
+//version = VERSION_NAME
 logger.info("RxAndroid using version=$project.version")
 
 android {
@@ -113,6 +115,28 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 artifacts {
     archives javadocJar
     archives sourcesJar
+}
+
+// Configure artifactory (for publishing snapshots)
+//
+// Based on NebulaOJOPublishingPlugin (from nebula-bintray-plugin)
+artifactory {
+    contextUrl = 'https://oss.jfrog.org'
+
+    publish {
+        repository {
+            repoKey = 'oss-snapshot-local'
+
+            if (project.hasProperty('BINTRAY_USER')) {
+                username = project.property('BINTRAY_USER')
+                password = project.property('BINTRAY_APIKEY')
+            }
+        }
+
+        defaults {
+            publishConfigs('archives')
+        }
+    }
 }
 
 // Configure gradle-bintray-plugin (for publishing releases)
