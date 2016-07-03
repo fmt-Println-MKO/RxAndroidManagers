@@ -22,6 +22,7 @@ import android.location.LocationManager;
 
 import de.sunbits.rx.androidmanagers.location.LocationConfig;
 import de.sunbits.rx.androidmanagers.location.LocationObservable;
+import de.sunbits.rx.androidmanagers.location.LocationProvider;
 import rx.Observable;
 
 /**
@@ -47,8 +48,8 @@ public class RxManager {
      */
     public Observable<Location> createLocationObservable() {
 
-        LocationManager mLocationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
-        return LocationObservable.create(mLocationManager);
+        LocationConfig config = LocationConfig.newBuilder().withProvider(LocationProvider.GPS).withMinDistance(0).withMinTime(0).build();
+        return createLocationObservable(config);
     }
 
     /**
@@ -56,9 +57,10 @@ public class RxManager {
      * <p>
      * Listening to locations updates will be started when subscribing and will be
      * stopped on unSubscribe or in case of an error.
-     * 
+     *
      * @param config configuration for provider minTime and minDistance
-     * @return an Observable providing latest location updates 
+     *
+     * @return an Observable providing latest location updates
      */
     public Observable<Location> createLocationObservable(LocationConfig config) {
 
