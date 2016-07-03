@@ -37,12 +37,6 @@ public class LocationObservable {
 
     private static final String TAG = "LocationObservable";
 
-    public static Observable<Location> create(final LocationManager mLocationManager) {
-
-        LocationConfig config = LocationConfig.newBuilder().withProvider(LocationProvider.GPS).withMinDistance(0).withMinTime(0).build();
-        return create(mLocationManager, config);
-    }
-
     public static Observable<Location> create(final LocationManager mLocationManager, final LocationConfig config) {
 
         final LocationListener[] listener = new LocationListener[1];
